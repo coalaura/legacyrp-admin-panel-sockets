@@ -59,7 +59,7 @@ func logCoordsForPlayer(server, steam string, player map[string]interface{}) err
 	if c != nil && character != nil {
 		t := time.Now().Unix()
 
-		id := getInt64("id", character)
+		id := getInt64("id", character, false)
 
 		x, xOk := c["x"].(float64)
 		y, yOk := c["y"].(float64)

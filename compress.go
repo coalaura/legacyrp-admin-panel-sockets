@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"time"
 )
 
 type CCharacter struct {
@@ -38,7 +37,7 @@ type CDutyPlayer struct {
 	SteamIdentifier string `json:"c,omitempty"`
 }
 
-func CompressPlayers(server string, players []map[string]interface{}) []CPlayer {
+func CompressPlayers(players []map[string]interface{}) []CPlayer {
 	compressed := make([]CPlayer, len(players))
 
 	for i, p := range players {
@@ -46,9 +45,9 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		var c *CCharacter
 		if character != nil {
 			c = &CCharacter{
-				Flags:    getInt64("flags", character),
+				Flags:    getInt64("flags", character, false),
 				FullName: getString("fullName", character, false),
-				ID:       getInt64("id", character),
+				ID:       getInt64("id", character, false),
 			}
 		}
 
@@ -57,40 +56,24 @@ func CompressPlayers(server string, players []map[string]interface{}) []CPlayer 
 		if vehicle != nil {
 			v = &CVehicle{
 				Driving: getBool("driving", vehicle),
-				ID:      getInt64("id", vehicle),
+				ID:      getInt64("id", vehicle, false),
 				Model:   getString("model", vehicle, true),
 				Name:    getString("name", vehicle, false),
 			}
 		}
 
 		compressed[i] = CPlayer{
-			AFK:            0,
+			AFK:            getInt64("afkSince", p, true),
 			Character:      c,
 			Movement:       getMovementData(p),
-			Flags:          getInt64("flags", p),
-			InvisibleSince: getInt64("invisible_since", p),
+			Flags:          getInt64("flags", p, false),
+			InvisibleSince: getInt64("invisible_since", p, false),
 			Name:           getString("name", p, false),
-			Source:         getInt64("source", p),
+			Source:         getInt64("source", p, false),
 			Steam:          getString("steamIdentifier", p, false),
 			Vehicle:        v,
 		}
 
-		hash := compressed[i].Movement
-		id := compressed[i].Steam
-		now := time.Now().Unix()
-
-		lastPositionMutex.Lock()
-		pos, ok := lastPosition[server][id]
-		if !ok || pos.Coords != hash {
-			pos := MovementLog{
-				Time:   now,
-				Coords: hash,
-			}
-			lastPosition[server][id] = pos
-		}
-		lastPositionMutex.Unlock()
-
-		compressed[i].AFK = now - pos.Time
 	}
 
 	return compressed
@@ -153,7 +136,7 @@ func getFloat64(key string, m map[string]interface{}) float64 {
 	return 0
 }
 
-func getInt64(key string, m map[string]interface{}) int64 {
+func getInt64(key string, m map[string]interface{}, ignoreInvalid bool) int64 {
 	v, ok := m[key]
 
 	if ok && v != nil {
@@ -169,7 +152,7 @@ func getInt64(key string, m map[string]interface{}) int64 {
 
 		if ok {
 			return i
-		} else {
+		} else if !ignoreInvalid {
 			log.Warning("Unable to read '" + fmt.Sprint(v) + "' (" + key + ") as int64")
 		}
 	}

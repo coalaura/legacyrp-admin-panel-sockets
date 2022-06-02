@@ -79,11 +79,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	b, err := ioutil.ReadFile("afk.json")
-	if err == nil {
-		_ = json.Unmarshal(b, &lastPosition)
-	}
-
 	_ = doHistoryCleanup()
 
 	gin.DefaultWriter = colorable.NewColorableStdout()

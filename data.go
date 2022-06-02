@@ -20,27 +20,15 @@ type Data struct {
 	Players []map[string]interface{}
 }
 
-type MovementLog struct {
-	Time   int64
-	Coords string
-}
-
 var (
 	lastError      = make(map[string]*time.Time)
 	lastErrorMutex sync.Mutex
-
-	lastPosition      = make(map[string]map[string]MovementLog)
-	lastPositionSave  = time.Unix(0, 0)
-	lastPositionMutex sync.Mutex
 
 	lastInvisible      = make(map[string]map[string]int64)
 	lastInvisibleMutex sync.Mutex
 
 	lastDuty      = make(map[string]OnDutyList)
 	lastDutyMutex sync.Mutex
-
-	loggedHashes      = make(map[string]bool)
-	loggedHashesMutex sync.Mutex
 )
 
 type InfoPackage struct {
@@ -98,7 +86,7 @@ func startDataLoop() {
 					}
 
 					b, _ = json.Marshal(map[string]interface{}{
-						"p": CompressPlayers(server, data.Players),
+						"p": CompressPlayers(data.Players),
 						"d": map[string][]CDutyPlayer{
 							"p": CompressDutyPlayers(last.Police),
 							"e": CompressDutyPlayers(last.EMS),
@@ -246,15 +234,8 @@ func extraData(server string, data *Data) {
 		return
 	}
 
-	lastPositionMutex.Lock()
-	_, ok := lastPosition[server]
-	if !ok {
-		lastPosition[server] = make(map[string]MovementLog)
-	}
-	lastPositionMutex.Unlock()
-
 	lastInvisibleMutex.Lock()
-	_, ok = lastInvisible[server]
+	_, ok := lastInvisible[server]
 	if !ok {
 		lastInvisible[server] = make(map[string]int64)
 	}
@@ -326,19 +307,6 @@ func extraData(server string, data *Data) {
 		}
 	}
 	lastInvisibleMutex.Unlock()
-
-	lastPositionMutex.Lock()
-	for id := range lastPosition[server] {
-		if !validIDs[id] {
-			delete(lastPosition[server], id)
-		}
-	}
-
-	if time.Now().Sub(lastPositionSave) > 5*time.Minute {
-		b, _ := json.Marshal(lastPosition)
-		_ = ioutil.WriteFile("afk.json", b, 0777)
-	}
-	lastPositionMutex.Unlock()
 }
 
 func getSteamIdentifiersByTypeAndServer(typ, server string) []string {
