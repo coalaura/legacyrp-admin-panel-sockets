@@ -1,14 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/mattn/go-colorable"
 	"github.com/rs/xid"
 	"github.com/subosito/gotenv"
 	"gitlab.com/milan44/logger"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -230,13 +228,4 @@ func main() {
 		}
 		panic(err)
 	}
-}
-
-func loadJSON(file string, dst *map[string]string) error {
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(b, dst)
 }
