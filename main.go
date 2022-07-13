@@ -217,7 +217,7 @@ func main() {
 
 		server := c.Param("server")
 		steam := c.Param("steam")
-		stamp, err := strconv.ParseInt(c.Param("from"), 10, 64)
+		stamp, err := strconv.ParseInt(c.Param("stamp"), 10, 64)
 
 		if err != nil {
 			c.JSON(200, map[string]interface{}{
