@@ -222,7 +222,7 @@ func main() {
 		if err != nil {
 			c.JSON(200, map[string]interface{}{
 				"status": false,
-				"error":  "invalid stamp",
+				"error":  "invalid timestamp",
 			})
 			return
 		}
