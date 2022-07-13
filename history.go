@@ -102,6 +102,67 @@ func doHistoryCleanup() error {
 	})
 }
 
+func getAllPlayersAtTime(server, steam string, stamp int64) (interface{}, error) {
+	day := time.Unix(stamp, 0).Format("2006-01-02")
+
+	dir := "./history/" + server + "/" + day + "/"
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil, errors.New("no data for that day")
+	}
+
+	players := make(map[string][]float64)
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info != nil && !info.IsDir() && strings.HasSuffix(path, ".csv") {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			scanner := bufio.NewScanner(file)
+			index := 0
+			for scanner.Scan() {
+				elements := strings.Split(scanner.Text(), ",")
+
+				// Skip csv header
+				if index == 0 {
+					index++
+					continue
+				}
+				index++
+
+				if len(elements) == 6 {
+					t, tErr := strconv.ParseInt(elements[0], 10, 64)
+					x, xErr := strconv.ParseFloat(elements[2], 64)
+					y, yErr := strconv.ParseFloat(elements[3], 64)
+
+					if tErr == nil || xErr == nil && yErr == nil {
+						if t == stamp {
+							players[filepath.Base(path)] = []float64{
+								x, y,
+							}
+						}
+					} else {
+						log.Warning("Failed to read x/y coordinate")
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	return players, err
+}
+
 func getHistoricLocation(server, steam string, from, till int64) (interface{}, error) {
 	fromDay := time.Unix(from, 0).Format("2006-01-02")
 	tillDay := time.Unix(till, 0).Format("2006-01-02")

@@ -209,6 +209,39 @@ func main() {
 		}
 	})
 
+	r.GET("/history/timestamp/:server/:stamp", func(c *gin.Context) {
+		if !checkSession(c, true) {
+			log.Info("Rejected unauthorized login")
+			return
+		}
+
+		server := c.Param("server")
+		steam := c.Param("steam")
+		stamp, err := strconv.ParseInt(c.Param("from"), 10, 64)
+
+		if err != nil {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  "invalid stamp",
+			})
+			return
+		}
+
+		data, err := getAllPlayersAtTime(server, steam, stamp)
+
+		if err != nil {
+			c.JSON(200, map[string]interface{}{
+				"status": false,
+				"error":  err.Error(),
+			})
+		} else {
+			c.JSON(200, map[string]interface{}{
+				"status": true,
+				"data":   data,
+			})
+		}
+	})
+
 	go startDataLoop()
 	go startDutyLoop()
 	go startStaffChatLoop()
