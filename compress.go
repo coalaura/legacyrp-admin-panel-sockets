@@ -29,6 +29,7 @@ type CPlayer struct {
 	Source         int64       `json:"g,omitempty"`
 	Steam          string      `json:"h,omitempty"`
 	Vehicle        *CVehicle   `json:"i,omitempty"`
+	InstanceId     int64       `json:"j,omitempty"`
 }
 
 type CDutyPlayer struct {
@@ -72,8 +73,8 @@ func CompressPlayers(players []map[string]interface{}) []CPlayer {
 			Source:         getInt64("source", p, false),
 			Steam:          getString("steamIdentifier", p, false),
 			Vehicle:        v,
+			InstanceId:     getInt64("instanceId", p, false),
 		}
-
 	}
 
 	return compressed
